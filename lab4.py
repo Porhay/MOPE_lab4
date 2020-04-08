@@ -132,7 +132,27 @@ for i in range(len(matrix_x)):
     matrix_3x[i] = [x1, x2, x3]
 
 adequacy, odinority = False, False
-# Адекватність і однорідність по замовчуванні False
+
+
+def cohren(Gp, Gt, m, odinority):
+    #критерій кохрена
+    print("\nКритерій Кохрена")
+
+    if Gt > Gp or m >= 25:
+        print("Дисперсія однорідна при рівні значимості {:.2f}!\nЗбільшувати m не потрібно.".format(q))
+        odinority = True
+    else:
+        print("Дисперсія не однорідна при рівні значимості {:.2f}!".format(q))
+        m += 1
+    if m == 25:
+        exit()
+    return odinority
+
+
+
+
+
+# Адекватність і однорідність по замовчуванню False
 while not adequacy:
     while not odinority:
         matrix_y = matrixGenerator()
@@ -195,66 +215,60 @@ while not adequacy:
         f3 = f1 * f2
         q = 1 - p
         Gp = max(dispersion_y) / sum(dispersion_y)
-        print("\nКритерій Кохрена")
         Gt = CritValues.cohrenValue(f2, f1, q)
-        if Gt > Gp or m >= 25:
-            print("Дисперсія однорідна при рівні значимості {:.2f}!\nЗбільшувати m не потрібно.".format(q))
-            odinority = True
-        else:
-            print("Дисперсія не однорідна при рівні значимості {:.2f}!".format(q))
-            m += 1
-        if m == 25:
-            exit()
 
-    print("\nКритерій Стьюдента")
-    beta_1 = [b0, b1, b2, b3]
-    significant_coefficients = studentTest(beta_1)
-    print("{:.3f} + {:.3f} * X1 + {:.3f} * X2 + {:.3f} * X3 = ŷ".format(significant_coefficients[0],
-                                                                        significant_coefficients[1],
-                                                                        significant_coefficients[2],
-                                                                        significant_coefficients[3]))
+        cohren(Gp, Gt, m, odinority)
+        odinority = True
 
-    d = len(significant_coefficients) - significant_coefficients.count(0)
-    f4 = N - d
-    print("\nКритерій Фішера")
-    if not fisherTest(significant_coefficients):
-        print("Рівняння регресії неадекватне стосовно оригіналу\nЕфект взаємодії!")
-        beta = [0 for i in range(N)]
-        for i in range(N):
-            if i == 0:
-                beta[i] += sum(middle_y) / len(middle_y)
-            else:
-                for j in range(7):
-                    beta[i] += middle_y[i] * matrixExp[i][j] / N
-        print("\nРівняння регресії з ефектом взаємодії")
-        print("{:.3f} + {:.3f} * X1 + {:.3f} * X2 + {:.3f} * X3 + {:.3f} * Х1X2 + {:.3f} * Х1X3 + {:.3f} * Х2X3"
-              "+ {:.3f} * Х1Х2X3= ŷ".format(beta[0], beta[1], beta[2], beta[3], beta[4], beta[5], beta[6], beta[7]))
-        print("\nКритерій Кохрена")
-        Gt = CritValues.cohrenValue(f2, f1, q)
-        if Gt > Gp or m >= 25:
-            print("Дисперсія однорідна при рівні значимості {:.2f}!\nЗбільшувати m не потрібно.".format(q))
-            odinority = True
-        else:
-            print("Дисперсія не однорідна при рівні значимості {:.2f}!".format(q))
-            m += 1
-        if m == 25:
-            exit()
-        significant_coefficients = studentTest(beta, 8)
+    def student(N):
         print("\nКритерій Стьюдента")
-        print("{:.3f} + {:.3f} * X1 + {:.3f} * X2 + {:.3f} * X3 + {:.3f} * Х1X2 + {:.3f} * Х1X3 + {:.3f} * Х2X3"
-              "+ {:.3f} * Х1Х2X3= ŷ".format(significant_coefficients[0], significant_coefficients[1],
-                                            significant_coefficients[2],
-                                            significant_coefficients[3],
-                                            significant_coefficients[4],
-                                            significant_coefficients[5],
-                                            significant_coefficients[6],
-                                            significant_coefficients[7]))
+        beta_1 = [b0, b1, b2, b3]
+        significant_coefficients = studentTest(beta_1)
+        print("{:.3f} + {:.3f} * X1 + {:.3f} * X2 + {:.3f} * X3 = ŷ".format(significant_coefficients[0],
+                                                                            significant_coefficients[1],
+                                                                            significant_coefficients[2],
+                                                                            significant_coefficients[3]))
 
         d = len(significant_coefficients) - significant_coefficients.count(0)
         f4 = N - d
+        return f4, d, significant_coefficients
+
+    f4, d, significant_coefficients = student(N)
+
+
+
+    if not fisherTest(significant_coefficients):
+        def fisher(N):
+            # критерій фішера
+            print("\nКритерій Фішера")
+            print("Рівняння регресії неадекватне стосовно оригіналу\nЕфект взаємодії!")
+            beta = [0 for i in range(N)]
+            for i in range(N):
+                if i == 0:
+                    beta[i] += sum(middle_y) / len(middle_y)
+                else:
+                    for j in range(7):
+                        beta[i] += middle_y[i] * matrixExp[i][j] / N
+            print("\nРівняння регресії з ефектом взаємодії")
+            print("{:.3f} + {:.3f} * X1 + {:.3f} * X2 + {:.3f} * X3 + {:.3f} * Х1X2 + {:.3f} * Х1X3 + {:.3f} * Х2X3"
+                  "+ {:.3f} * Х1Х2X3= ŷ".format(beta[0], beta[1], beta[2], beta[3], beta[4], beta[5], beta[6], beta[7]))
+            return beta
+
+        beta = fisher(N)
+
+        Gt = CritValues.cohrenValue(f2, f1, q)
+
+        cohren(Gp, Gt, m, odinority)
+        odinority = True
+
+        significant_coefficients = studentTest(beta, 8)
+        
+        f4, d, significant_coefficients = student(N)
+
         if studentTest(beta, 7):
             print("Рівняння регресії адекватне стосовно оригіналу")
             adequacy = True
+
     else:
         print("Рівняння регресії адекватне стосовно оригіналу")
         adequacy = True
